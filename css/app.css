@@ -1,0 +1,49 @@
+﻿        /* Konfigurasi Statis Blogger */
+        .post-title, .post-header, .post-footer, .comments, .sidebar, .header-widget { display: none !important; }
+        .post-body { margin: 0 !important; padding: 0 !important; }
+        body { 
+            padding: 0 !important; margin: 0 !important;
+            background-color: #f8fafc; /* Slate 50 */
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Hide arrows in number input & Select Customization */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        /* PENGATURAN CETAK (PRINT CSS) */
+        @media print {
+            body > *:not(#print-area) { display: none !important; }
+            #print-area { 
+                display: block !important; 
+                visibility: visible !important;
+                position: absolute; 
+                left: 0; top: 0; 
+                width: 100%; 
+                margin: 0; padding: 0; 
+                background: white; 
+                color: black; 
+                font-family: 'Times New Roman', Times, serif; /* Font resmi dokumen */
+            }
+            @page { margin: 1.5cm; size: landscape; }
+            .print-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
+            .print-table th, .print-table td { border: 1px solid black; padding: 6px; text-align: left; }
+            .print-table th { background-color: #e2e8f0 !important; -webkit-print-color-adjust: exact; }
+            .print-kop { border-bottom: 3px solid black; margin-bottom: 20px; padding-bottom: 10px; display: flex; align-items: center; }
+            .print-ttd { margin-top: 40px; page-break-inside: avoid; }
+        }

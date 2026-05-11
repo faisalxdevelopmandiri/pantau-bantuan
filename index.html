@@ -1,0 +1,1026 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transparansi Bantuan</title>
+    
+    <link rel="icon" href="./assets/brand/favicon.png" type="image/png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6', // Teal 500
+                            600: '#0d9488', // Teal 600
+                            900: '#134e4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="./css/app.css">
+</head>
+<body class="text-slate-800 relative">
+
+    <script src="./js/config.js"></script>
+
+    <!-- AREA CETAK TERSEMBUNYI (BAYANGAN) -->
+    <div id="print-area" class="hidden"></div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="fixed top-5 right-5 z-[120] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- CUSTOM CONFIRM MODAL -->
+    <div id="custom-confirm-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+        <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onclick="closeConfirm()"></div>
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full relative z-10 shadow-2xl transform scale-95 transition-transform duration-200" id="confirm-modal-box">
+            <div class="w-12 h-12 rounded-full bg-blue-50 text-[#1e3a8a] flex items-center justify-center text-2xl mb-4 mx-auto">
+                <i class="fa-solid fa-circle-question"></i>
+            </div>
+            <h3 id="confirm-title" class="text-lg font-extrabold text-slate-900 text-center mb-2">Konfirmasi</h3>
+            <p id="confirm-message" class="text-sm font-medium text-slate-500 text-center mb-6 leading-relaxed">Apakah Anda yakin?</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeConfirm()" class="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 transition-colors w-full border border-slate-200">Batal</button>
+                <button id="confirm-yes-btn" class="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#1e3a8a] hover:bg-blue-800 transition-colors shadow-lg shadow-blue-900/20 w-full">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GLOBAL LOADING MODAL -->
+    <div id="loading-modal" class="fixed inset-0 z-[110] hidden items-center justify-center">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
+        <div class="relative bg-white rounded-3xl p-8 flex flex-col items-center shadow-2xl transform scale-100 animate-pulse-fast">
+            <div class="w-14 h-14 border-4 border-slate-100 border-t-[#1e3a8a] rounded-full animate-spin mb-4 shadow-sm"></div>
+            <h3 class="text-base font-extrabold text-slate-800 mb-1">Memproses</h3>
+            <p id="loading-text" class="text-xs font-medium text-slate-500 text-center">Menyimpan data...</p>
+        </div>
+    </div>
+
+    <!-- MODAL PROFIL SAYA (MULTI ROLE) -->
+    <div id="modal-profil" class="fixed inset-0 z-[80] overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-profil')"></div>
+            <div class="relative bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-sm w-full border border-slate-100 fade-in">
+                <form onsubmit="handleUpdateProfile(event)">
+                    <div class="px-6 py-5 border-b border-slate-100 bg-white flex justify-between items-center sticky top-0 z-10">
+                        <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-3">
+                            <span class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm border border-indigo-100"><i class="fa-solid fa-user-circle"></i></span>
+                            Profil Saya
+                        </h3>
+                        <button type="button" onclick="closeModal('modal-profil')" class="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="p-6 space-y-4 bg-slate-50/50">
+                        <div class="text-center mb-4">
+                            <div id="modal-profil-initial" class="w-16 h-16 rounded-full bg-[#1e3a8a]/10 text-[#1e3a8a] font-black flex items-center justify-center text-2xl border border-[#1e3a8a]/20 mx-auto mb-2">AD</div>
+                            <span id="modal-profil-role-badge" class="text-[10px] font-bold px-3 py-1 rounded-full bg-slate-200 text-slate-700 uppercase tracking-wide">Role</span>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Tampilan</label>
+                            <input type="text" id="profil-nama" required class="block w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all text-sm font-medium shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Ubah Password</label>
+                            <input type="password" id="profil-password" class="block w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all text-sm font-medium shadow-sm" placeholder="Ketik sandi baru...">
+                            <p class="text-[10px] text-slate-400 mt-1.5 font-medium"><i class="fa-solid fa-info-circle"></i> Biarkan kosong jika tidak ingin mengubah password.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white px-6 py-4 border-t border-slate-100 rounded-b-3xl">
+                        <button type="submit" class="w-full px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[#1e3a8a] hover:bg-[#1e40af] shadow-md shadow-blue-900/20 transition-colors">Simpan Profil</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL POKTAN -->
+    <div id="modal-poktan" class="fixed inset-0 z-[60] overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-poktan')"></div>
+            <div class="relative bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-lg w-full border border-slate-100 fade-in">
+                <form id="form-poktan" onsubmit="savePoktan(event)">
+                    <div class="px-6 py-5 border-b border-slate-100 bg-white flex justify-between items-center sticky top-0 z-10">
+                        <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-3" id="modal-poktan-title">
+                            <span class="w-10 h-10 rounded-xl bg-blue-50 text-[#1e3a8a] flex items-center justify-center text-sm border border-blue-100"><i class="fa-solid fa-users"></i></span>
+                            Form Kelompok Tani
+                        </h3>
+                        <button type="button" onclick="closeModal('modal-poktan')" class="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="p-6 space-y-5 bg-slate-50/50">
+                        <input type="hidden" id="poktan-id">
+                        <input type="hidden" id="poktan-kode"> <!-- Disimpan agar tidak berubah saat diedit -->
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Kelompok</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fa-solid fa-people-group text-slate-400"></i></div>
+                                <input type="text" id="poktan-nama" required class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all text-sm font-medium shadow-sm" placeholder="Misal: Poktan Tani Maju">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Ketua</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fa-solid fa-user-tie text-slate-400"></i></div>
+                                <input type="text" id="poktan-ketua" required class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all text-sm font-medium shadow-sm" placeholder="Nama lengkap ketua">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Kecamatan</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fa-solid fa-map text-slate-400"></i></div>
+                                    <select id="poktan-kec" required onchange="updateDesaDropdown()" class="block w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all text-sm font-medium shadow-sm cursor-pointer"></select>
+                                    <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none"><i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i></div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Desa / Kelurahan</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fa-solid fa-map-pin text-slate-400"></i></div>
+                                    <select id="poktan-desa" required class="block w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all text-sm font-medium shadow-sm cursor-pointer disabled:opacity-50 disabled:bg-slate-100"></select>
+                                    <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none"><i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white px-6 py-4 flex justify-end gap-3 border-t border-slate-100 rounded-b-3xl">
+                        <button type="button" onclick="closeModal('modal-poktan')" class="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 transition-colors">Batal</button>
+                        <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[#1e3a8a] hover:bg-[#1e40af] shadow-md shadow-blue-900/20 transition-colors flex items-center gap-2"><i class="fa-solid fa-floppy-disk"></i> Simpan Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL BANTUAN (SMART FORM) -->
+    <div id="modal-bantuan" class="fixed inset-0 z-[60] overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onclick="closeModal('modal-bantuan')"></div>
+            <div class="relative bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-4xl w-full border border-slate-100 fade-in">
+                <form id="form-bantuan" onsubmit="saveBantuan(event)">
+                    <div class="px-6 py-5 border-b border-slate-100 bg-white flex justify-between items-center sticky top-0 z-20">
+                        <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-3" id="modal-bantuan-title">
+                            <span class="w-10 h-10 rounded-xl bg-green-50 text-[#16a34a] flex items-center justify-center text-sm border border-green-100"><i class="fa-solid fa-box-open"></i></span>
+                            Pencatatan Penyaluran Bantuan
+                        </h3>
+                        <button type="button" onclick="closeModal('modal-bantuan')" class="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-6 sm:p-8 bg-slate-50/50 space-y-6">
+
+                        <input type="hidden" id="bantuan-id">
+                        
+                        <!-- SECTION 1: Informasi Dasar -->
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="fa-solid fa-circle-info text-slate-400"></i> Informasi Umum & Penerima</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Jenis Bantuan</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fa-solid fa-tags text-slate-400"></i></div>
+                                        <select id="bantuan-jenis" required class="block w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-transparent transition-all text-sm font-medium cursor-pointer">
+                                            <option value="" disabled selected>-- Pilih Jenis Bantuan --</option>
+                                            <option value="Hibah Barang">Hibah Barang</option>
+                                            <option value="Hibah Uang">Hibah Uang</option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none"><i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Tahun Anggaran</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fa-solid fa-calendar-days text-slate-400"></i></div>
+                                        <input type="number" id="bantuan-tahun" readonly class="block w-full pl-11 pr-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 font-bold focus:outline-none cursor-not-allowed transition-all sm:text-sm" value="">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Sumber Dana</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fa-solid fa-building-columns text-slate-400"></i></div>
+                                        <select id="bantuan-sumber" required onchange="toggleSumberLainnya(this.value)" class="block w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-transparent transition-all text-sm font-medium cursor-pointer">
+                                            <option value="" disabled selected>-- Pilih Sumber Dana --</option>
+                                            <option value="APBD">APBD</option>
+                                            <option value="APBD Prov/APBD 1">APBD Prov/APBD 1</option>
+                                            <option value="APBD POKIR">APBD POKIR</option>
+                                            <option value="APBD PIK">APBD PIK</option>
+                                            <option value="APBD DBHCT">APBD DBHCT</option>
+                                            <option value="APBD DAK">APBD DAK</option>
+                                            <option value="APBN">APBN</option>
+                                            <option value="Lainnya...">Lainnya...</option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none"><i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i></div>
+                                    </div>
+                                    <input type="text" id="bantuan-sumber-lainnya" class="hidden mt-2 block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-transparent transition-all text-sm font-medium" placeholder="Ketik sumber dana lainnya...">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Bidang Terkait</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fa-solid fa-layer-group text-slate-400"></i></div>
+                                        <select id="bantuan-bidang" required class="block w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-transparent transition-all text-sm font-medium cursor-pointer">
+                                            <option value="" disabled selected>-- Pilih Bidang --</option>
+                                            <option value="Peternakan">Bidang Peternakan</option>
+                                            <option value="Perkebunan">Bidang Perkebunan</option>
+                                            <option value="Hortikultura">Bidang Hortikultura</option>
+                                            <option value="Tanaman Pangan">Bidang Tanaman Pangan</option>
+                                            <option value="Ketahanan Pangan">Bidang Ketahanan Pangan</option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none"><i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i></div>
+                                    </div>
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Kelompok Tani Penerima</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fa-solid fa-users text-slate-400"></i></div>
+                                        <input type="text" id="bantuan-poktan-search" required autocomplete="off" class="block w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-transparent transition-all text-sm font-medium cursor-text" placeholder="Ketik kode, nama kelompok tani atau desa..." onfocus="togglePoktanDropdown(true)" onblur="setTimeout(() => togglePoktanDropdown(false), 200)" onkeyup="filterPoktanSelect()">
+                                        <input type="hidden" id="bantuan-poktan-id">
+                                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none"><i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i></div>
+                                        <!-- Custom Dropdown List -->
+                                        <div id="bantuan-poktan-dropdown" class="hidden absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- SECTION 2: Data Bantuan & Detail Rincian -->
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="fa-solid fa-truck-ramp-box text-slate-400"></i> Data Bantuan & Rincian Spesifikasi</h4>
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Bantuan / Program</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fa-solid fa-cube text-slate-400"></i></div>
+                                        <input type="text" id="bantuan-nama-program" required class="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-transparent transition-all text-sm font-medium" placeholder="Ketik nama program bantuan, cth: Pengadaan Alsintan Pasca Panen">
+                                    </div>
+                                </div>
+
+                                <!-- DYNAMIC REPEATER HEADER-DETAIL -->
+                                <div id="wrapper-rincian-dinamis" class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">Tabel Rincian Spesifikasi</label>
+                                    </div>
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-left mb-2 min-w-[700px]">
+                                            <thead class="text-[10px] text-slate-400 uppercase">
+                                                <tr>
+                                                    <th class="pb-2 font-bold w-2/5">Spesifikasi / Nama Barang</th>
+                                                    <th class="pb-2 font-bold px-1 w-20">Volume</th>
+                                                    <th class="pb-2 font-bold px-1 w-24">Satuan</th>
+                                                    <th class="pb-2 font-bold px-1 w-32">Harga Satuan (Rp)</th>
+                                                    <th class="pb-2 font-bold px-1 w-32">Total (Rp)</th>
+                                                    <th class="pb-2 text-center w-10">Hapus</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tbody-rincian-dinamis" class="space-y-2">
+                                                <!-- Baris dinamis JS -->
+                                            </tbody>
+                                            <tfoot>
+                                                <tr>
+                                                    <td colspan="4" class="pt-3 text-right text-xs font-bold text-slate-600 pr-4">Grand Total Bantuan:</td>
+                                                    <td colspan="2" class="pt-3 text-left">
+                                                        <span id="grand-total-display" class="text-sm font-extrabold text-[#16a34a]">Rp 0</span>
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    <button type="button" onclick="addRincianRow()" class="mt-2 text-xs font-bold text-[#1e3a8a] hover:text-white bg-white hover:bg-[#1e3a8a] border border-blue-200 px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 transition-all">
+                                        <i class="fa-solid fa-plus"></i> Tambah Baris Spesifikasi
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    <div class="bg-white px-6 py-4 flex justify-end gap-3 border-t border-slate-100 rounded-b-3xl">
+                        <button type="button" onclick="closeModal('modal-bantuan')" class="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200">Batal</button>
+                        <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[#16a34a] hover:bg-green-700 shadow-lg shadow-green-900/20 transition-colors flex items-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> Simpan Data
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="public-view" class="min-h-screen flex flex-col fade-in">
+        
+        <nav class="bg-white/90 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-50 transition-all duration-300">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-20 items-center">
+                    
+                    <div class="flex items-center">
+                        <img src="./assets/brand/logo-mark.png" onerror="this.onerror=null; this.src='https://i.imgur.com/4IeAh8Z.png';" alt="Logo" class="h-10 sm:h-12 md:h-14 lg:h-16 w-auto object-contain drop-shadow-sm transition-all duration-300">
+                    </div>
+                    <button onclick="switchView('login-view')" class="group flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-900 text-white text-sm font-semibold hover:bg-brand-600 hover:shadow-lg hover:shadow-brand-500/25 transition-all duration-300">
+                        <i class="fa-solid fa-user-shield text-xs opacity-70 group-hover:opacity-100 transition-opacity"></i>
+                        <span class="hidden sm:inline">Portal Admin</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 w-full">
+            <div class="mb-10 text-center max-w-3xl mx-auto">
+                <h1 class="text-3xl sm:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight leading-tight">
+                    Transparansi Bantuan <br>
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-[#1e3a8a] to-[#16a34a]">
+                        Sektor Pertanian
+                    </span>
+                </h1>
+                <p class="text-slate-500 text-base sm:text-lg">Pantau penyaluran alat, mesin, dan sarana prasarana untuk Kelompok Tani secara terbuka, akuntabel, dan real-time.</p>
+            </div>
+
+            <!-- Modern Filter Controls & VS Mode -->
+            <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200/60 mb-6 flex flex-col lg:flex-row gap-3 relative z-10 w-full">
+                <div class="flex flex-col sm:flex-row gap-2 items-center w-full lg:w-auto lg:flex-shrink-0">
+                    <button id="btn-toggle-vs" onclick="toggleVsMode()" class="w-full sm:w-auto px-4 py-3 bg-slate-50 text-slate-600 rounded-xl text-sm font-bold border border-slate-200 hover:bg-[#1e3a8a] hover:text-white hover:border-[#1e3a8a] transition-all whitespace-nowrap shadow-sm">
+                        <i class="fa-solid fa-code-compare mr-1"></i> Mode VS
+                    </button>
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <div class="relative w-full sm:min-w-[160px]">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-calendar-days text-slate-400"></i>
+                            </div>
+                            <select id="filter-tahun-publik" class="block w-full pl-11 pr-10 py-3 text-sm border-none bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-xl focus:ring-2 focus:ring-[#16a34a] transition-colors font-bold text-slate-600 cursor-pointer" onchange="triggerFilter()">
+                                <!-- Populated by JS -->
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                            </div>
+                        </div>
+                        <span id="vs-separator" class="hidden font-black text-slate-400 text-xs">VS</span>
+                        <div id="wrapper-vs2" class="relative w-full hidden sm:min-w-[160px]">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-calendar-days text-slate-400"></i>
+                            </div>
+                            <select id="filter-tahun-publik-vs2" class="block w-full pl-11 pr-10 py-3 text-sm border-none bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-xl focus:ring-2 focus:ring-[#16a34a] transition-colors font-bold text-[#16a34a] cursor-pointer" onchange="triggerFilter()">
+                                <!-- Populated by JS -->
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Search -->
+                <div class="flex items-center gap-2 w-full flex-grow">
+                    <div class="relative w-full flex-grow">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                        </div>
+                        <input type="text" id="search-publik" placeholder="Cari nama poktan, desa, atau jenis bantuan..." class="block w-full pl-11 pr-4 py-3 text-sm border-none bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-xl focus:ring-2 focus:ring-[#16a34a] transition-colors font-medium placeholder-slate-400" onkeyup="triggerFilter()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- VS Summary Cards (MUNCUL JIKA MODE VS AKTIF) -->
+            <div id="vs-summary-cards" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mb-6 fade-in">
+                <!-- Tahun A -->
+                <div class="bg-white rounded-3xl border border-slate-200/60 p-5 shadow-sm relative overflow-hidden">
+                    <div class="absolute -right-6 -top-6 w-24 h-24 bg-blue-50 rounded-full z-0"></div>
+                    <div class="relative z-10 flex justify-between items-center mb-4">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Data Tahun <span id="vs-y1-title" class="text-[#1e3a8a] font-black text-base ml-1">0</span></span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 mb-1 uppercase">Total Poktan</p>
+                            <p id="vs-y1-poktan" class="text-2xl font-extrabold text-slate-800">0</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 mb-1 uppercase">Nilai Bantuan</p>
+                            <p id="vs-y1-rp" class="text-lg sm:text-xl font-extrabold text-[#16a34a]">Rp 0</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Tahun B -->
+                <div class="bg-white rounded-3xl border border-slate-200/60 p-5 shadow-sm relative overflow-hidden">
+                    <div class="absolute -right-6 -top-6 w-24 h-24 bg-amber-50 rounded-full z-0"></div>
+                    <div class="relative z-10 flex justify-between items-center mb-4">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Data Tahun <span id="vs-y2-title" class="text-amber-600 font-black text-base ml-1">0</span></span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 mb-1 uppercase">Total Poktan</p>
+                            <p id="vs-y2-poktan" class="text-2xl font-extrabold text-slate-800">0</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 mb-1 uppercase">Nilai Bantuan</p>
+                            <p id="vs-y2-rp" class="text-lg sm:text-xl font-extrabold text-[#16a34a]">Rp 0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STANDARD DATA TABLE -->
+            <div id="standard-table-container" class="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden flex flex-col mb-4 transition-all">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-100">
+                        <thead>
+                            <tr class="bg-slate-50/50">
+                                <th class="px-6 py-4 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Penerima & Lokasi</th>
+                                <th class="px-6 py-4 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tahun</th>
+                                <th class="px-6 py-4 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider min-w-[300px]">Program Bantuan & Spesifikasi</th>
+                                <th class="px-6 py-4 text-right text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sumber Dana</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-publik" class="divide-y divide-slate-50 bg-white">
+                            <!-- Rendered by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VS MODE DATA TABLES (SIDE-BY-SIDE) -->
+            <div id="vs-table-container" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 transition-all">
+                <!-- Table VS 1 -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden flex flex-col">
+                    <div class="bg-[#1e3a8a] px-4 py-3 border-b border-blue-900"><h3 class="font-bold text-white text-center text-sm uppercase tracking-wide">Tahun <span id="vs-col-title-1">A</span></h3></div>
+                    <div class="overflow-x-auto flex-grow">
+                        <table class="min-w-full divide-y divide-slate-100">
+                            <tbody id="tbody-publik-vs1" class="divide-y divide-slate-50 bg-white">
+                                <!-- Rendered by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Table VS 2 -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden flex flex-col">
+                    <div class="bg-[#f59e0b] px-4 py-3 border-b border-amber-600"><h3 class="font-bold text-white text-center text-sm uppercase tracking-wide">Tahun <span id="vs-col-title-2">B</span></h3></div>
+                    <div class="overflow-x-auto flex-grow">
+                        <table class="min-w-full divide-y divide-slate-100">
+                            <tbody id="tbody-publik-vs2" class="divide-y divide-slate-50 bg-white">
+                                <!-- Rendered by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Pagination Container (Bottom) -->
+            <div id="public-pagination-container" class="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden mt-4"></div>
+            
+        </main>
+        
+        <footer class="mt-auto py-8 text-center border-t border-slate-200/60">
+            <p class="text-sm font-medium text-slate-400">&copy; <span id="current-year"></span> Dinas Pangan dan Pertanian Kabupaten Batang.</p>
+        </footer>
+    </div>
+
+    <!-- Halaman Login -->
+    <div id="login-view" class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 hidden fade-in relative bg-slate-50 overflow-hidden">
+        <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[#1e3a8a]/5 blur-[100px] pointer-events-none"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-[#16a34a]/10 blur-[100px] pointer-events-none"></div>
+
+        <button onclick="switchView('public-view')" class="absolute top-6 left-6 text-slate-500 hover:text-[#1e3a8a] bg-white border border-slate-200 shadow-sm hover:bg-slate-50 rounded-full w-12 h-12 flex items-center justify-center transition-all duration-300 z-10">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+
+        <div class="max-w-md w-full bg-white rounded-[2rem] border border-slate-200/60 p-8 sm:p-10 z-10 shadow-2xl shadow-slate-200/50">
+            <div class="text-center mb-8">
+                <div class="inline-flex flex-col items-center justify-center w-full">
+                    <img src="./assets/brand/logo-login.png" onerror="this.onerror=null; this.src='https://i.imgur.com/O2s0oyH.png';" alt="Logo" class="h-24 sm:h-28 md:h-32 w-auto object-contain mb-4 drop-shadow-md transition-all duration-300">
+                </div>
+                <p class="text-xs text-slate-400 mt-1">Akses khusus pengelola data</p>
+            </div>
+            
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-5">
+                <div class="space-y-4">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fa-solid fa-user text-slate-400 text-sm"></i></div>
+                        <input id="username" type="text" placeholder="Username" required class="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all sm:text-sm">
+                    </div>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fa-solid fa-lock text-slate-400 text-sm"></i></div>
+                        <input id="password" type="password" placeholder="Password" required class="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all sm:text-sm">
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <canvas id="captcha-canvas" width="140" height="44" class="bg-slate-100 border border-slate-200 rounded-xl shadow-inner cursor-pointer" onclick="generateCaptcha()" title="Klik untuk mengubah kode"></canvas>
+                            <button type="button" onclick="generateCaptcha()" class="h-[44px] w-[44px] flex items-center justify-center text-slate-500 hover:text-white bg-slate-100 border border-slate-200 shadow-sm hover:bg-slate-700 hover:border-slate-700 rounded-xl transition-all"><i class="fa-solid fa-arrows-rotate"></i></button>
+                        </div>
+                        <input id="captcha-input" type="text" placeholder="Masukkan kode keamanan di atas" required class="block w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold tracking-widest placeholder-slate-400 placeholder:font-medium placeholder:tracking-normal focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all sm:text-sm text-center">
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full flex justify-center py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-[#1e3a8a] hover:bg-[#1e40af] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-[#1e3a8a] transition-all shadow-lg shadow-blue-900/20">
+                        Masuk Sistem Admin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Halaman Admin -->
+    <div id="admin-view" class="min-h-screen bg-slate-50 flex hidden fade-in">
+        
+        <aside id="sidebar" class="bg-white border-r border-slate-100 w-72 flex-shrink-0 hidden md:flex flex-col transition-all duration-300 z-20 overflow-hidden">
+            <!-- Inner wrapper: Mencegah konten menyusut berantakan saat sidebar dianimasikan ke w-0 -->
+            <div class="w-72 h-full flex flex-col flex-shrink-0">
+                <div class="h-24 flex items-center justify-center px-6 border-b border-slate-100">
+                    <img src="./assets/brand/logo-mark.png" onerror="this.onerror=null; this.src='https://i.imgur.com/4IeAh8Z.png';" alt="Logo" class="h-12 sm:h-14 w-auto object-contain drop-shadow-sm transition-all duration-300">
+                </div>
+                
+                <div class="py-6 flex-grow overflow-y-auto px-4">
+                    <nav class="space-y-1.5">
+                        <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 mt-2">Menu Utama</p>
+                        <button onclick="switchAdminTab('tab-dashboard')" id="nav-tab-dashboard" class="admin-nav-btn w-full flex items-center px-4 py-3.5 text-sm font-semibold rounded-2xl bg-brand-50 text-brand-600 transition-all"><i class="fa-solid fa-chart-pie w-6 text-left"></i> Dashboard</button>
+                        
+                        <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 mt-8">Manajemen Data</p>
+                        <button onclick="switchAdminTab('tab-poktan')" id="nav-tab-poktan" class="admin-nav-btn w-full flex items-center px-4 py-3.5 text-sm font-semibold rounded-2xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all"><i class="fa-solid fa-users w-6 text-left"></i> Kelompok Tani</button>
+                        <button onclick="switchAdminTab('tab-bantuan')" id="nav-tab-bantuan" class="admin-nav-btn w-full flex items-center px-4 py-3.5 text-sm font-semibold rounded-2xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all"><i class="fa-solid fa-box-open w-6 text-left"></i> Penyaluran Bantuan</button>
+                        
+                        <div id="nav-group-sistem">
+                            <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 mt-8">Sistem</p>
+                            <button onclick="switchAdminTab('tab-pengaturan')" id="nav-tab-pengaturan" class="admin-nav-btn w-full flex items-center px-4 py-3.5 text-sm font-semibold rounded-2xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all"><i class="fa-solid fa-gear w-6 text-left"></i> Pengaturan</button>
+                        </div>
+                    </nav>
+                </div>
+                
+                <div class="p-4 border-t border-slate-100">
+                    <div class="bg-slate-50 rounded-xl p-4 flex items-center justify-between hover:bg-slate-100 transition-colors cursor-pointer" onclick="openProfileModal()">
+                        <div class="flex items-center gap-3">
+                            <div id="sidebar-user-initial" class="w-9 h-9 rounded-full bg-[#1e3a8a]/10 text-[#1e3a8a] font-bold flex items-center justify-center text-sm border border-[#1e3a8a]/20">AD</div>
+                            <div>
+                                <p id="sidebar-user-name" class="text-xs font-bold text-slate-900">Administrator</p>
+                                <p id="sidebar-user-role" class="text-[10px] text-slate-500">Super Admin</p>
+                            </div>
+                        </div>
+                        <button onclick="event.stopPropagation(); confirmLogout()" class="w-8 h-8 rounded-full hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors" title="Logout"><i class="fa-solid fa-arrow-right-from-bracket text-sm"></i></button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <div class="flex-1 flex flex-col overflow-hidden w-full relative">
+            
+            <header class="bg-slate-50 sticky top-0 h-20 flex items-center justify-between px-4 sm:px-8 z-10 transition-all duration-300 border-b border-slate-200/60 md:border-none">
+                <div class="flex items-center">
+                    <button onclick="toggleMenu()" class="text-slate-600 hover:text-[#1e3a8a] focus:outline-none p-2 -ml-2 rounded-xl hover:bg-white transition-colors shadow-sm bg-white border border-slate-200/60 mr-3">
+                        <i class="fa-solid fa-bars-staggered text-lg"></i>
+                    </button>
+                    <img src="./assets/brand/logo-mark.png" onerror="this.onerror=null; this.src='https://i.imgur.com/4IeAh8Z.png';" alt="Logo" class="h-8 sm:h-10 w-auto object-contain drop-shadow-sm md:hidden mr-2 transition-all duration-300">
+                    <h2 class="text-xl font-extrabold text-slate-900 tracking-tight hidden sm:block" id="admin-header-title">Dashboard Overview</h2>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div class="relative w-full sm:min-w-[160px]">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fa-solid fa-calendar-days text-slate-400"></i></div>
+                        <select id="global-year-admin" onchange="changeGlobalYear(this.value)" class="block w-full pl-11 pr-10 py-2.5 sm:py-3 text-sm border border-slate-200/60 bg-white hover:bg-slate-50 focus:bg-white rounded-xl focus:ring-2 focus:ring-[#16a34a] transition-colors font-bold text-slate-600 cursor-pointer shadow-sm">
+                            <!-- Populated by JS -->
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none"><i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i></div>
+                    </div>
+                </div>
+            </header>
+
+            <div id="mobile-sidebar" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden transition-opacity">
+                <!-- Sidebar Mobile Logic here -->
+                <div class="fixed inset-y-0 left-0 w-[280px] bg-white shadow-2xl flex flex-col z-50 transform -translate-x-full transition-transform duration-300 ease-out rounded-r-3xl" id="mobile-sidebar-panel">
+                    <div class="h-24 flex items-center justify-between px-6 border-b border-slate-50">
+                        <img src="./assets/brand/logo-mark.png" onerror="this.onerror=null; this.src='https://i.imgur.com/4IeAh8Z.png';" alt="Logo" class="h-12 sm:h-14 w-auto object-contain drop-shadow-sm transition-all duration-300">
+                        <button onclick="toggleMenu()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    </div>
+                    <div class="py-6 flex-grow overflow-y-auto px-4">
+                         <nav class="space-y-1.5">
+                            <button onclick="switchAdminTab('tab-dashboard'); toggleMenu()" class="w-full flex items-center px-4 py-3.5 text-sm font-semibold rounded-2xl bg-brand-50 text-brand-600"><i class="fa-solid fa-chart-pie w-6 text-left"></i> Dashboard</button>
+                            <button onclick="switchAdminTab('tab-poktan'); toggleMenu()" class="w-full flex items-center px-4 py-3.5 text-sm font-semibold rounded-2xl text-slate-500 hover:bg-slate-50 mt-1"><i class="fa-solid fa-users w-6 text-left"></i> Kelompok Tani</button>
+                            <button onclick="switchAdminTab('tab-bantuan'); toggleMenu()" class="w-full flex items-center px-4 py-3.5 text-sm font-semibold rounded-2xl text-slate-500 hover:bg-slate-50 mt-1"><i class="fa-solid fa-box-open w-6 text-left"></i> Penyaluran</button>
+                            <button onclick="switchAdminTab('tab-pengaturan'); toggleMenu()" id="nav-mobile-pengaturan" class="w-full flex items-center px-4 py-3.5 text-sm font-semibold rounded-2xl text-slate-500 hover:bg-slate-50 mt-1"><i class="fa-solid fa-gear w-6 text-left"></i> Pengaturan</button>
+                        </nav>
+                    </div>
+                    <!-- Profil Mobile -->
+                    <div class="p-4 border-t border-slate-100 mt-auto">
+                        <button onclick="openProfileModal(); toggleMenu()" class="w-full bg-slate-50 rounded-xl p-3 flex items-center gap-3 hover:bg-slate-100 transition-colors mb-2 text-left">
+                            <div class="w-8 h-8 rounded-full bg-[#1e3a8a]/10 text-[#1e3a8a] font-bold flex items-center justify-center text-xs">PR</div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-900">Profil Saya</p>
+                                <p class="text-[10px] text-slate-500">Ubah detail akun</p>
+                            </div>
+                        </button>
+                        <button onclick="confirmLogout(); toggleMenu()" class="w-full bg-red-50 text-red-500 rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-red-100 font-bold text-sm transition-colors"><i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar Sistem</button>
+                    </div>
+                </div>
+            </div>
+
+            <main class="flex-1 overflow-y-auto p-4 sm:p-8 w-full relative pb-20 sm:pb-8">
+                
+                <!-- TAB DASHBOARD -->
+                <div id="tab-dashboard" class="admin-tab-content fade-in block">
+                    <div class="grid grid-cols-2 gap-3 mb-6 md:hidden">
+                        <button onclick="switchAdminTab('tab-poktan')" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200/60 flex flex-col items-center justify-center gap-2 text-[#1e3a8a] hover:bg-blue-50 transition-colors">
+                            <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-lg"><i class="fa-solid fa-users"></i></div>
+                            <span class="text-xs font-bold text-slate-700">Data Poktan</span>
+                        </button>
+                        <button onclick="switchAdminTab('tab-bantuan')" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200/60 flex flex-col items-center justify-center gap-2 text-emerald-600 hover:bg-emerald-50 transition-colors">
+                            <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-lg"><i class="fa-solid fa-box-open"></i></div>
+                            <span class="text-xs font-bold text-slate-700">Penyaluran</span>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+                        <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/60 relative overflow-hidden group">
+                            <div class="absolute right-[-10px] top-[-10px] w-24 h-24 bg-[#1e3a8a]/5 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500 ease-out"></div>
+                            <div class="flex items-center gap-4 relative z-10">
+                                <div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-[#1e3a8a] text-xl shadow-inner border border-blue-100"><i class="fa-solid fa-users"></i></div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Total Poktan <span class="normal-case font-normal">(Master)</span></p>
+                                    <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-0.5 sm:mt-1" id="stat-poktan">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/60 relative overflow-hidden group">
+                            <div class="absolute right-[-10px] top-[-10px] w-24 h-24 bg-[#16a34a]/5 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500 ease-out"></div>
+                            <div class="flex items-center gap-4 relative z-10">
+                                <div class="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center text-[#16a34a] text-xl shadow-inner border border-green-100"><i class="fa-solid fa-box-open"></i></div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Bantuan Tahun <span id="stat-tahun-label" class="text-slate-600">2024</span></p>
+                                    <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-0.5 sm:mt-1" id="stat-bantuan">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200/60 relative overflow-hidden group">
+                            <div class="absolute right-[-10px] top-[-10px] w-24 h-24 bg-emerald-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500 ease-out"></div>
+                            <div class="flex items-center gap-4 relative z-10">
+                                <div class="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center text-[#16a34a] text-xl shadow-inner border border-emerald-100"><i class="fa-solid fa-rupiah-sign"></i></div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Total Penyaluran <span class="normal-case font-normal text-slate-500">(Aktif)</span></p>
+                                    <p class="text-lg sm:text-2xl font-extrabold text-[#16a34a] mt-1 sm:mt-2" id="stat-total-rp">Rp 0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- AREA GRAFIK DIBAGI DUA (BAR & DOUGHNUT) -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <!-- Bar Chart: Proporsi per Bidang -->
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200/60 p-5 sm:p-8">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
+                                <h3 class="text-base sm:text-lg font-extrabold text-slate-900">Proporsi Bantuan per Bidang</h3>
+                                <span class="text-xs font-bold bg-slate-100 text-slate-500 px-3 py-1 rounded-full border border-slate-200">Tahun <span class="chart-tahun-label">2024</span></span>
+                            </div>
+                            <div class="relative h-60 sm:h-72 w-full"><canvas id="bidangChart"></canvas></div>
+                        </div>
+
+                        <!-- Doughnut Chart: Sebaran per Kecamatan -->
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-200/60 p-5 sm:p-8">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
+                                <h3 class="text-base sm:text-lg font-extrabold text-slate-900">Sebaran per Kecamatan</h3>
+                                <span class="text-xs font-bold bg-slate-100 text-slate-500 px-3 py-1 rounded-full border border-slate-200">Tahun <span class="chart-tahun-label">2024</span></span>
+                            </div>
+                            <div class="relative h-60 sm:h-72 w-full flex justify-center"><canvas id="kecamatanChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- TABEL 5 PENYALURAN TERAKHIR -->
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden w-full relative flex flex-col mb-4">
+                        <div class="px-5 py-4 sm:px-8 sm:py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <h3 class="text-base font-extrabold text-slate-900">5 Penyaluran Terakhir</h3>
+                            <button onclick="switchAdminTab('tab-bantuan')" class="text-xs font-bold text-[#1e3a8a] hover:text-blue-800 transition-colors">Lihat Semua &rarr;</button>
+                        </div>
+                        <div class="overflow-x-auto relative z-0 flex-grow">
+                            <table class="min-w-full divide-y divide-slate-100">
+                                <thead>
+                                    <tr class="bg-white">
+                                        <th class="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Penerima & Lokasi</th>
+                                        <th class="px-6 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Program & Bantuan</th>
+                                        <th class="px-6 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Nilai</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-recent-bantuan" class="divide-y divide-slate-50 bg-white">
+                                    <!-- Rendered by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB POKTAN (WITH PAGINATION AND SEARCH) -->
+                <div id="tab-poktan" class="admin-tab-content fade-in hidden w-full">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900">Master Kelompok Tani</h2>
+                            <p class="text-sm text-slate-500 mt-1">Kelola data induk kelompok tani dan gapoktan.</p>
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap justify-end">
+                            <!-- MEGA DROPDOWN (PENGGANTI 4 TOMBOL) -->
+                            <div class="relative inline-block text-left dropdown-container flex-1 sm:flex-none">
+                                <button type="button" onclick="toggleDropdown('dropdown-poktan')" class="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-slate-700 text-sm font-bold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all shadow-sm whitespace-nowrap focus:ring-2 focus:ring-[#1e3a8a] focus:outline-none">
+                                    <i class="fa-solid fa-gear"></i> Opsi Data <i class="fa-solid fa-chevron-down text-xs ml-1"></i>
+                                </button>
+                                <div id="dropdown-poktan" class="hidden dropdown-menu-content origin-top-right absolute right-0 mt-2 w-56 rounded-xl shadow-xl bg-white ring-1 ring-black ring-opacity-5 divide-y divide-slate-100 z-50 transition-all">
+                                    <div class="py-1">
+                                        <p class="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">Ekspor Laporan</p>
+                                        <button onclick="cetakPDFPoktan(); toggleDropdown('dropdown-poktan')" class="group flex items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-red-50 hover:text-red-600 w-full text-left font-medium transition-colors"><i class="fa-solid fa-file-pdf w-5 text-slate-400 group-hover:text-red-500"></i> Cetak PDF Resmi</button>
+                                        <button onclick="eksporExcelPoktan(); toggleDropdown('dropdown-poktan')" class="group flex items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-green-50 hover:text-green-600 w-full text-left font-medium transition-colors"><i class="fa-solid fa-file-excel w-5 text-slate-400 group-hover:text-green-500"></i> Ekspor Data Excel</button>
+                                    </div>
+                                    <div class="py-1">
+                                        <p class="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">Impor & Update</p>
+                                        <span data-super-admin-tooltip class="block"><button data-super-admin-only="import-tools" onclick="downloadTemplatePoktan(); toggleDropdown('dropdown-poktan')" class="group flex items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-[#1e3a8a] w-full text-left font-medium transition-colors"><i class="fa-solid fa-download w-5 text-slate-400 group-hover:text-[#1e3a8a]"></i> Unduh Template CSV</button></span>
+                                        <span data-super-admin-tooltip class="block"><button data-super-admin-only="import-tools" onclick="document.getElementById('upload-excel-poktan').click(); toggleDropdown('dropdown-poktan')" class="group flex items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-[#1e3a8a] w-full text-left font-medium transition-colors"><i class="fa-solid fa-upload w-5 text-slate-400 group-hover:text-[#1e3a8a]"></i> Upload Data CSV</button></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <input type="file" id="upload-excel-poktan" accept=".csv" class="hidden" onchange="handleUploadPoktan(event)">
+                            <button onclick="openModal('modal-poktan')" class="flex-shrink-0 w-full sm:w-auto bg-[#16a34a] hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-green-900/20 transition-all duration-300 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-plus text-sm"></i> Poktan Baru
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search Box Poktan -->
+                    <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200/60 mb-4 flex flex-col sm:flex-row gap-3">
+                        <div class="relative w-full flex-grow">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                            </div>
+                            <input type="text" id="search-admin-poktan" placeholder="Cari nama kelompok, ketua, desa, kecamatan..." class="block w-full pl-11 pr-4 py-2.5 text-sm border-none bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-xl focus:ring-2 focus:ring-[#1e3a8a] transition-colors font-medium placeholder-slate-400" onkeyup="triggerAdminPoktanFilter()">
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden w-full relative flex flex-col">
+                        <div class="md:hidden absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10"></div>
+                        <div class="overflow-x-auto relative z-0 flex-grow">
+                            <table class="min-w-full divide-y divide-slate-100">
+                                <thead>
+                                    <tr class="bg-slate-50/50">
+                                        <th class="px-6 py-4 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Nama Kelompok</th>
+                                        <th class="px-6 py-4 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Ketua</th>
+                                        <th class="px-6 py-4 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Lokasi (Kec/Desa)</th>
+                                        <th class="px-6 py-4 text-right text-[11px] font-bold text-slate-400 uppercase tracking-wider">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-poktan" class="divide-y divide-slate-50 bg-white">
+                                    <!-- Rendered by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Paginasi Admin Poktan -->
+                        <div id="admin-poktan-pagination-container" class="border-t border-slate-100 bg-white"></div>
+                    </div>
+                </div>
+
+                <!-- TAB BANTUAN (WITH PAGINATION AND SEARCH) -->
+                <div id="tab-bantuan" class="admin-tab-content fade-in hidden w-full">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900">Penyaluran Bantuan <span class="text-[#16a34a]" id="title-tahun-bantuan">2024</span></h2>
+                            <p class="text-sm text-slate-500 mt-1">Menampilkan riwayat distribusi untuk tahun anggaran aktif.</p>
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap justify-end">
+                            <!-- MEGA DROPDOWN BANTUAN -->
+                            <div class="relative inline-block text-left dropdown-container flex-1 sm:flex-none">
+                                <button type="button" onclick="toggleDropdown('dropdown-bantuan')" class="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-slate-700 text-sm font-bold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all shadow-sm whitespace-nowrap focus:ring-2 focus:ring-[#1e3a8a] focus:outline-none">
+                                    <i class="fa-solid fa-gear"></i> Opsi Data <i class="fa-solid fa-chevron-down text-xs ml-1"></i>
+                                </button>
+                                <div id="dropdown-bantuan" class="hidden dropdown-menu-content origin-top-right absolute right-0 mt-2 w-56 rounded-xl shadow-xl bg-white ring-1 ring-black ring-opacity-5 divide-y divide-slate-100 z-50 transition-all">
+                                    <div class="py-1">
+                                        <p class="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">Ekspor Laporan</p>
+                                        <button onclick="cetakPDFBantuan(); toggleDropdown('dropdown-bantuan')" class="group flex items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-red-50 hover:text-red-600 w-full text-left font-medium transition-colors"><i class="fa-solid fa-file-pdf w-5 text-slate-400 group-hover:text-red-500"></i> Cetak PDF Resmi</button>
+                                        <button onclick="eksporExcelBantuan(); toggleDropdown('dropdown-bantuan')" class="group flex items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-green-50 hover:text-green-600 w-full text-left font-medium transition-colors"><i class="fa-solid fa-file-excel w-5 text-slate-400 group-hover:text-green-500"></i> Ekspor Data Excel</button>
+                                    </div>
+                                    <div class="py-1">
+                                        <p class="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">Impor & Update</p>
+                                        <span data-super-admin-tooltip class="block"><button data-super-admin-only="import-tools" onclick="downloadTemplateBantuan(); toggleDropdown('dropdown-bantuan')" class="group flex items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-[#1e3a8a] w-full text-left font-medium transition-colors"><i class="fa-solid fa-download w-5 text-slate-400 group-hover:text-[#1e3a8a]"></i> Unduh Template CSV</button></span>
+                                        <span data-super-admin-tooltip class="block"><button data-super-admin-only="import-tools" onclick="document.getElementById('upload-excel-bantuan').click(); toggleDropdown('dropdown-bantuan')" class="group flex items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-[#1e3a8a] w-full text-left font-medium transition-colors"><i class="fa-solid fa-upload w-5 text-slate-400 group-hover:text-[#1e3a8a]"></i> Upload Data CSV</button></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <input type="file" id="upload-excel-bantuan" accept=".csv" class="hidden" onchange="handleUploadBantuan(event)">
+                            <button onclick="openModal('modal-bantuan')" class="flex-shrink-0 w-full sm:w-auto bg-[#16a34a] hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-green-900/20 transition-all duration-300 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-plus text-sm"></i> Penyaluran
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search Box Bantuan -->
+                    <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-200/60 mb-4 flex flex-col sm:flex-row gap-3">
+                        <div class="relative w-full flex-grow">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                            </div>
+                            <input type="text" id="search-admin-bantuan" placeholder="Cari rincian data penyaluran..." class="block w-full pl-11 pr-4 py-2.5 text-sm border-none bg-slate-50 hover:bg-slate-100 focus:bg-white rounded-xl focus:ring-2 focus:ring-[#16a34a] transition-colors font-medium placeholder-slate-400" onkeyup="triggerAdminBantuanFilter()">
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden w-full relative flex flex-col">
+                        <div class="md:hidden absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10"></div>
+                        <div class="overflow-x-auto relative z-0 flex-grow">
+                            <table class="min-w-full divide-y divide-slate-100">
+                                <thead>
+                                    <tr class="bg-slate-50/50">
+                                        <th class="px-6 py-4 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Info Penerima & Bidang</th>
+                                        <th class="px-6 py-4 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider min-w-[250px]">Bantuan / Program</th>
+                                        <th class="px-6 py-4 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sumber Dana</th>
+                                        <th class="px-6 py-4 text-right text-[11px] font-bold text-slate-400 uppercase tracking-wider">Opsi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-bantuan" class="divide-y divide-slate-50 bg-white">
+                                    <!-- Rendered by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Paginasi Admin Bantuan -->
+                        <div id="admin-bantuan-pagination-container" class="border-t border-slate-100 bg-white"></div>
+                    </div>
+                </div>
+
+                <div id="tab-pengaturan" class="admin-tab-content fade-in hidden w-full">
+                    <div class="max-w-4xl mx-auto space-y-8 pb-4">
+                        <!-- KOLOM 1: MANAJEMEN PENGGUNA -->
+                        <div class="flex flex-col">
+                            <h2 class="text-2xl font-extrabold text-slate-900 mb-6">Manajemen Pengguna</h2>
+                            <div class="bg-white rounded-3xl shadow-sm border border-slate-200/60 p-6 sm:p-8 relative overflow-hidden flex-grow flex flex-col">
+                                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-[100px] -z-10"></div>
+                                
+                                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Tambah Akses Akun</p>
+                                <form onsubmit="handleAddUser(event)" class="space-y-4 mb-8 relative z-10 p-5 bg-slate-50 border border-slate-100 rounded-2xl">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <input type="text" id="add-user-name" class="block w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1e3a8a] transition-all text-sm font-medium" placeholder="Nama Lengkap" required>
+                                        </div>
+                                        <div>
+                                            <input type="text" id="add-user-username" class="block w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1e3a8a] transition-all text-sm font-medium" placeholder="Username login" required>
+                                        </div>
+                                        <div>
+                                            <input type="password" id="add-user-password" class="block w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1e3a8a] transition-all text-sm font-medium" placeholder="Password default" required>
+                                        </div>
+                                        <div>
+                                            <select id="add-user-role" class="block w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1e3a8a] transition-all text-sm font-medium cursor-pointer" required>
+                                                <option value="" disabled selected>Pilih Role</option>
+                                                <option value="super_admin">Super Admin</option>
+                                                <option value="operator">Operator Data</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-end mt-2">
+                                        <button type="submit" class="w-full sm:w-auto bg-[#1e3a8a] hover:bg-blue-800 text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-blue-900/20 transition-all flex justify-center items-center gap-2">
+                                            <i class="fa-solid fa-user-plus"></i> Buat Akun Baru
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Daftar Pengguna</p>
+                                <div class="overflow-y-auto max-h-60 relative z-10 flex-grow rounded-xl border border-slate-100 shadow-sm" style="scrollbar-width: thin;">
+                                    <table class="w-full text-left text-sm bg-white">
+                                        <thead class="bg-slate-50 text-[10px] text-slate-400 uppercase sticky top-0 border-b border-slate-100 z-10">
+                                            <tr>
+                                                <th class="py-3 px-4 font-bold">Nama / Username</th>
+                                                <th class="py-3 px-4 font-bold">Role</th>
+                                                <th class="py-3 px-4 text-right">Opsi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody-users" class="divide-y divide-slate-100">
+                                            <!-- Rendered by JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- KOLOM 2: MANAJEMEN TAHUN -->
+                        <div class="flex flex-col">
+                            <h2 class="text-2xl font-extrabold text-slate-900 mb-6">Tahun Anggaran</h2>
+                            <div class="bg-white rounded-3xl shadow-sm border border-slate-200/60 p-6 sm:p-8 relative overflow-hidden flex-grow">
+                                <div class="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-bl-[100px] -z-10"></div>
+                                
+                                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Tambah Tahun</p>
+                                <form onsubmit="handleTambahTahun(event)" class="flex gap-3 mb-8 relative z-10 max-w-sm">
+                                    <input type="number" id="input-tambah-tahun" class="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-[#16a34a] transition-all text-sm font-bold" placeholder="Cth: 2027" required min="2000" max="2100">
+                                    <button type="submit" class="bg-[#16a34a] hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-md shadow-green-900/20 transition-all duration-300 flex-shrink-0">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </form>
+                                
+                                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Daftar Tahun Terdaftar</p>
+                                <div class="overflow-y-auto max-h-60 relative z-10 rounded-xl border border-slate-100 shadow-sm bg-white" style="scrollbar-width: thin;">
+                                    <table class="w-full text-left text-sm">
+                                        <tbody id="tbody-pengaturan-tahun" class="divide-y divide-slate-100">
+                                            <!-- Rendered by JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- KOLOM 3: PENGATURAN CETAK -->
+                        <div class="flex flex-col">
+                            <h2 class="text-2xl font-extrabold text-slate-900 mb-6">Pengaturan Cetak Laporan</h2>
+                            <div class="bg-white rounded-3xl shadow-sm border border-slate-200/60 p-6 sm:p-8 relative overflow-hidden flex-grow">
+                                <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-[100px] -z-10"></div>
+                                
+                                <form onsubmit="savePrintSettings(event)" class="space-y-5 relative z-10">
+                                    
+                                    <!-- Logo Upload -->
+                                    <div class="mb-6 flex items-center gap-5 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <div class="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 overflow-hidden flex items-center justify-center bg-white flex-shrink-0 shadow-sm">
+                                            <img id="preview-logo-cetak" src="./assets/brand/logo-mark.png" onerror="this.onerror=null; this.src='https://i.imgur.com/4IeAh8Z.png';" alt="Logo" class="max-w-full max-h-full object-contain p-2">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Logo Instansi</label>
+                                            <button type="button" onclick="document.getElementById('input-logo-cetak').click()" class="text-xs font-bold bg-white border border-slate-200 shadow-sm px-4 py-2 rounded-lg hover:bg-[#16a34a] hover:text-white hover:border-[#16a34a] text-slate-700 transition-all">
+                                                <i class="fa-solid fa-image mr-1"></i> Ganti Logo
+                                            </button>
+                                            <input type="file" id="input-logo-cetak" accept="image/png, image/jpeg" class="hidden" onchange="handleLogoUpload(event)">
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Pemerintah Daerah</label>
+                                            <input type="text" id="print-pemda" class="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-[#16a34a] transition-all text-sm font-medium" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Instansi</label>
+                                            <input type="text" id="print-instansi" class="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-[#16a34a] transition-all text-sm font-medium" required>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Alamat & Kontak</label>
+                                        <textarea id="print-alamat" rows="3" class="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-[#16a34a] transition-all text-sm font-medium resize-none" required></textarea>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Jabatan Penandatangan</label>
+                                            <input type="text" id="print-jabatan" class="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-[#16a34a] transition-all text-sm font-medium" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Daerah / Unit Kerja</label>
+                                            <input type="text" id="print-daerah" class="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-[#16a34a] transition-all text-sm font-medium" required>
+                                        </div>
+                                        <div class="sm:col-span-2">
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Pimpinan</label>
+                                            <input type="text" id="print-nama" class="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-[#16a34a] transition-all text-sm font-medium" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Pangkat / Golongan</label>
+                                            <input type="text" id="print-pangkat" class="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-[#16a34a] transition-all text-sm font-medium" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIP Pimpinan</label>
+                                            <input type="text" id="print-nip" class="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#16a34a] focus:border-[#16a34a] transition-all text-sm font-medium" required>
+                                        </div>
+                                    </div>
+                                    <div class="pt-6 border-t border-slate-100 flex justify-end">
+                                        <button type="submit" class="w-full sm:w-auto bg-[#16a34a] hover:bg-green-700 text-white px-8 py-3 rounded-xl text-sm font-bold shadow-md shadow-green-900/20 transition-all duration-300">
+                                            Simpan Format Cetak
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- LOGIC JAVASCRIPT (FRONTEND MODE PREVIEW)   -->
+    <!-- ========================================== -->
+    <script src="./js/state.js"></script>
+    <script src="./js/api.js"></script>
+    <script src="./js/ui.js"></script>
+    <script src="./js/print-export.js"></script>
+    <script src="./js/forms-public.js"></script>
+    <script src="./js/auth-users.js"></script>
+    <script src="./js/render-public.js"></script>
+    <script src="./js/render-admin.js"></script>
+    <script src="./js/poktan-bantuan-crud.js"></script>
+    <script src="./js/import-csv.js"></script>
+    <script src="./js/dashboard-years.js"></script>
+    <script src="./js/main.js"></script>
+</body>
+</html>
